@@ -1,3 +1,4 @@
+#undef NDEBUG
 #include "Json2Xtc.hh"
 
 #include <list>
