@@ -311,6 +311,9 @@ int translateJson2XtcNames(Document* d, Xtc* xtc, const void* bufEnd, NamesLooku
         printf("Document is missing a mandatory field (alg, detName, detType, detId, or doc)!\n");
         return -1;
     }
+    if (!d->HasMember(":types:")) {
+        printf("Document is missing mandatory :types: field!")
+    }
     const Value& a = (*d)["alg:RO"];
     const Value& v = a["version:RO"];
     Alg alg = Alg(a["alg:RO"].GetString(), v[0].GetInt(),
