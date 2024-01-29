@@ -18,6 +18,7 @@
 #include "Epix100.hh"
 #include "Opal.hh"
 #include "Wave8.hh"
+#include "HREncoder.hh"
 #include "Piranha4.hh"
 #include "psdaq/service/MetricExporter.hh"
 #include "PGPDetectorApp.hh"
@@ -323,6 +324,7 @@ void PGPDetectorApp::initialize()
     f.register_type<TimingBEB>   ("tb");
     f.register_type<TimingSystem>("ts");
     f.register_type<Wave8>       ("wave8");
+    f.register_type<HREncoder>   ("hrencoder");
     f.register_type<Piranha4>    ("piranha4");
 
     m_det = f.create(&m_para, &m_drp.pool);
@@ -452,10 +454,10 @@ void PGPDetectorApp::handleDisconnect(const json& msg)
     PY_ACQUIRE_GIL_GUARD(m_pysave);  // Py_END_ALLOW_THREADS
 
     // Carry out the queued Unconfigure, if there was one
+
     if (m_unconfigure) {
         unconfigure();
     }
-
     disconnect();
 
     PY_RELEASE_GIL_GUARD; // Py_BEGIN_ALLOW_THREADS
@@ -542,7 +544,8 @@ void PGPDetectorApp::handlePhase1(const json& msg)
                                       std::ref(m_det), std::ref(m_drp.tebContributor())};
             m_collectorThread = std::thread(&PGPDetector::collector, std::ref(*m_pgpDetector),
                                             std::ref(m_drp.tebContributor()));
-
+	    
+	    
             unsigned error = m_det->configure(config_alias, xtc, bufEnd);
             if (!error) {
                 json scan = _getscankeys(phase1Info, m_para.detName.c_str(), m_para.alias.c_str());
@@ -681,23 +684,17 @@ void PGPDetectorApp::handleReset(const json& msg)
     PY_RELEASE_GIL_GUARD; // Py_BEGIN_ALLOW_THREADS
 }
 
-json PGPDetectorApp::connectionInfo(const nlohmann::json& msg)
+json PGPDetectorApp::connectionInfo()
 {
     std::string ip = m_para.kwargs.find("ep_domain") != m_para.kwargs.end()
                    ? getNicIp(m_para.kwargs["ep_domain"])
                    : getNicIp(m_para.kwargs["forceEnet"] == "yes");
     logging::debug("nic ip  %s", ip.c_str());
     json body = {{"connect_info", {{"nic_ip", ip}}}};
-
-    PY_ACQUIRE_GIL_GUARD(m_pysave);  // Py_END_ALLOW_THREADS
-
-    json info = m_det->connectionInfo(msg);
+    json info = m_det->connectionInfo();
     body["connect_info"].update(info);
     json bufInfo = m_drp.connectionInfo(ip);
     body["connect_info"].update(bufInfo); // Revisit: Should be in det_info
-
-    PY_RELEASE_GIL_GUARD; // Py_BEGIN_ALLOW_THREADS
-
     return body;
 }
 

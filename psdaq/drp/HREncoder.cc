@@ -22,38 +22,64 @@ using json = nlohmann::json;
 namespace Drp {
 
   namespace Enc {
+    class RawStream {
+    public:
+        static void varDef(VarDef& v,unsigned ch) {
+            char name[32];
+            // raw streams
+            sprintf(name,"raw_%d",ch);
+            v.NameVec.push_back(XtcData::Name(name, XtcData::Name::UINT64,1));
+        }
+        static void createData(CreateData& cd, unsigned& index, unsigned ch, Array<uint8_t>& seg) {
+            unsigned shape[MaxRank];
+            shape[0] = seg.shape()[0]>>1;
+            Array<uint64_t> arrayT = cd.allocate<uint64_t>(index++, shape);
+            memcpy(arrayT.data(), seg.data(), seg.shape()[0]);
+        }
+    };
     class ProcStream {
     public:
         static void varDef(VarDef& v) {
+	         //v.NameVec.push_back(XtcData::Name("encoder", XtcData::Name::UINT64));
             v.NameVec.push_back(XtcData::Name("position", XtcData::Name::UINT32));
             v.NameVec.push_back(XtcData::Name("error_cnt", XtcData::Name::UINT8));
             v.NameVec.push_back(XtcData::Name("missedTrig_cnt", XtcData::Name::UINT8));
-            v.NameVec.push_back(XtcData::Name("latches", XtcData::Name::UINT8)); // E, P, Q latches 1 bit each
+	          v.NameVec.push_back(XtcData::Name("latches", XtcData::Name::UINT8));
+            //v.NameVec.push_back(XtcData::Name("Elatch", XtcData::Name::UINT8)); // 1 bit
+            //v.NameVec.push_back(XtcData::Name("Platch", XtcData::Name::UINT8)); // 1 bit
+            //v.NameVec.push_back(XtcData::Name("Qlatch", XtcData::Name::UINT8)); // 1 bit
         }
 
         static void createData(CreateData& cd, unsigned& index, Array<uint8_t>& seg) {
             ProcStream& p = *new (seg.data()) ProcStream;
+      	    //cd.set_value(index++, p.m_output);
+
             cd.set_value(index++, p.m_position);
             cd.set_value(index++, p.m_encErrCnt);
             cd.set_value(index++, p.m_missedTrigCnt);
-            cd.set_value(index++, p.m_latches & 0b11100000); //0xe0
-	    p._dump();
+	          cd.set_value(index++, p.m_latches);// & 0b11100000); //0xe0
+
+	          p._dump();
         }
-    ProcStream(){}
+	ProcStream(){}
     private:
         void _dump() const
         {
-            std::cout << "Position: " << m_position << std::endl;
-            std::cout << "Position: " << m_encErrCnt << std::endl;
-            std::cout << "Position: " << m_latches << std::endl;
-            std::cout << "Position: " << m_reserved << std::endl;
+	          std::cout << "Position: " << m_position << std::endl;
+	          std::cout << "Error Count: " << m_encErrCnt << std::endl;
+	          std::cout << "Missed Triggers: " << m_missedTrigCnt << std::endl;
+	          std::cout << "Latch bits: " << m_latches << std::endl;
+	          std::cout << "Reserved: " << m_reserved << std::endl;
+	          // std::cout << "Full value: " << m_output << std::endl;
         }
-        //uint8_t _integralSize;
+
+        //uint64_t m_output {};
         uint32_t m_position {};
         uint8_t m_encErrCnt {};
         uint8_t m_missedTrigCnt {};
         uint8_t m_latches {}; // upper 3 bits define 3 latch bits
         uint8_t m_reserved {}; // actually 13 bits
+
     };
     class Streams {
     public:
@@ -69,13 +95,13 @@ namespace Drp {
             ProcStream::varDef(v);
             eventNames.add(xtc, bufEnd, v);
             lookup[raw] = NameIndex(eventNames); }
-          { Alg alg("fex", 0, 0, 1);
+          /*{ Alg alg("fex", 0, 0, 1);
             Names& eventNames = *new(xtc, bufEnd) Names(bufEnd,
                                                         detName, alg,
                                                         detType, detNum, fex);
             VarDef v;
             eventNames.add(xtc, bufEnd, v);
-            lookup[fex] = NameIndex(eventNames); }
+            lookup[fex] = NameIndex(eventNames); }*/
         }
         static void createData(XtcData::Xtc&         xtc,
                                const void*           bufEnd,
@@ -83,16 +109,15 @@ namespace Drp {
                                XtcData::NamesId&     rawId,
                                XtcData::NamesId&     fexId,
                                XtcData::Array<uint8_t>* streams) {
-	    std::cout  << "Streams::createData" << std::endl;
-	    CreateData raw(xtc, bufEnd, lookup, rawId);
+	          std::cout  << "Streams::createData" << std::endl;
+	          CreateData raw(xtc, bufEnd, lookup, rawId);
             std::cout << "after raw" << std::endl;
 
-	    unsigned index = 0;
-	    ProcStream::createData(raw, index, *streams);
-	    std::cout << "After ProcStream::createData" << std::endl;
-	    index = 0;
-
-            CreateData fex(xtc, bufEnd, lookup, fexId);
+	          unsigned index = 0;
+	          ProcStream::createData(raw, index, *streams);
+	          std::cout << "After ProcStream::createData" << std::endl;
+	          index = 0;
+            //CreateData fex(xtc, bufEnd, lookup, fexId);
 
        }
     };
