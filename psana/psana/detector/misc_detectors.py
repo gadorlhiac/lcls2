@@ -25,24 +25,6 @@ class epicsinfo_epicsinfo_1_0_0(DetectorImpl):
     def __call__(self):
         return self._infodict
 
-class pvdetinfo_pvdetinfo_1_0_0(DetectorImpl):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self._infodict={}
-        for c in self._configs:
-            if hasattr(c,'pvdetinfo'):
-                for seg,value in c.pvdetinfo.items():
-                    names = getattr(value,'pvdetinfo')
-                    keys = names.keys.split(',')
-                    for n in dir(names):
-                        if n.startswith('_') or n=='keys': continue
-                        if n not in self._infodict: self._infodict[n]={}
-                        values = getattr(names,n).split(',')
-                        for k,v in zip(keys,values): self._infodict[n][k]=v
-
-    def __call__(self):
-        return self._infodict
-
 class pv_raw_1_0_0(DetectorImpl):
     def __init__(self, *args):
         super().__init__(*args)
@@ -137,6 +119,26 @@ class encoder_interpolated_3_0_0(encoder_raw_3_0_0):
        Version 3.0.0 addresses fields as scalars, not as arrays.
        """
        return super().value(evt)
+
+class hrencoder_raw_0_0_1(DetectorImpl):
+    """High rate encoder.
+
+    The hrencoder detector returns 4 fields:
+        position - The encoder value/position.
+        missedTrig_cnt - Missed triggers
+        error_cnt - Number of errors.
+        latches - Only 3 bits of this integer correspond to the latch statuses.
+    """
+    def __init__(self, *args):
+        super().__init__(*args)
+
+    def value(self, evt) -> float:
+        segments = self._segments(evt)
+
+        if segments is None:
+            return None
+
+        return segments[0].position
 
 # Test
 class justafloat_simplefloat32_1_2_4(DetectorImpl):
