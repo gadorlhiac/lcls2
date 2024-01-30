@@ -392,7 +392,10 @@ const Pds::TimingHeader* PgpReader::handle(Detector* det, unsigned current)
 
             if ((evtCntDiff < 0) || (evtCntDiff > 100)) {
                 logging::critical("PGPReader: Aborting on crazy jump in event counter: %d\n", evtCntDiff);
-                abort();
+                //abort();
+                logging::critical("PGPReader: Commented out the abort()! Remember to uncomment for production!");
+                logging::critical("Sleeping...");
+                sleep(15);
             }
 
             if (m_lastComplete == evtCounter) {}  // something else is going on
@@ -981,7 +984,7 @@ DrpBase::DrpBase(Parameters& para, ZmqContext& context) :
     }
 
     if (para.kwargs.find("batching")!=para.kwargs.end()) {
-        logging::warning("The batching kwarg is obsolete and ignored (always enabled)");
+        logging::warning("The batching kwarg is obsolete and ignored (always enabled");
     }
     if (para.kwargs.find("directIO")!=para.kwargs.end()) {
         logging::warning("The directIO kwarg is obsolete and ignored (always enabled)");
