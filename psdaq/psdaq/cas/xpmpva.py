@@ -405,7 +405,11 @@ class XpmGroups(object):
         self.name = ":".join([pvbase_split[pos],pvbase_split[pos+1],""])
         self.parent  = None
         # adding try except because in the fee teststand xpm0 is not reachable
-        paddr = Pv(pvbase+'PAddr').get()
+        try:
+            paddr = Pv(pvbase+'PAddr').get()
+        except:
+            paddr = 0xffffffff
+            print("XPM has timed out")
 
         if paddr!=0xffffffff:
             name = xpmLinkId(paddr)[0]

@@ -2,7 +2,9 @@
 #include "Json2Xtc.hh"
 
 #include <list>
+#include <cstring>
 #include <string>
+#include <iostream>
 
 using namespace XtcData;
 using namespace rapidjson;
