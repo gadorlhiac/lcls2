@@ -393,19 +393,24 @@ const Pds::TimingHeader* PgpReader::handle(Detector* det, unsigned current)
             if ((evtCntDiff < 0) || (evtCntDiff > 100)) {
                 logging::critical("PGPReader: Aborting on crazy jump in event counter: %d\n", evtCntDiff);
                 //abort();
+                // Remove everything else in this block
                 logging::critical("PGPReader: Commented out the abort()! Remember to uncomment for production!");
+                handleBrokenEvent(*event);
+                freeDma(event);
                 logging::critical("Sleeping...");
                 sleep(15);
+                return nullptr;
+                // End remove
             }
 
             if (m_lastComplete == evtCounter) {}  // something else is going on
-            else {
+            else {/*
                 for (unsigned e=m_lastComplete+1; e!=evtCounter; e++) {
                     PGPEvent* brokenEvent = &m_pool.pgpEvents[e & (m_pool.nDmaBuffers() - 1)];
                     logging::error("broken event:  %08x", brokenEvent->mask);
                     handleBrokenEvent(*brokenEvent);
                     freeDma(brokenEvent);   // Leaves event mask = 0
-                }
+                }*/
             }
         }
         m_lastComplete = evtCounter;
