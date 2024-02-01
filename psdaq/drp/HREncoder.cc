@@ -59,7 +59,7 @@ namespace Drp {
             cd.set_value(index++, p.m_missedTrigCnt);
 	          cd.set_value(index++, p.m_latches);// & 0b11100000); //0xe0
 
-	          p._dump();
+	          //p._dump();
         }
 	ProcStream(){}
     private:
@@ -109,13 +109,10 @@ namespace Drp {
                                XtcData::NamesId&     rawId,
                                XtcData::NamesId&     fexId,
                                XtcData::Array<uint8_t>* streams) {
-	          std::cout  << "Streams::createData" << std::endl;
 	          CreateData raw(xtc, bufEnd, lookup, rawId);
-            std::cout << "after raw" << std::endl;
 
 	          unsigned index = 0;
 	          ProcStream::createData(raw, index, *streams);
-	          std::cout << "After ProcStream::createData" << std::endl;
 	          index = 0;
             //CreateData fex(xtc, bufEnd, lookup, fexId);
 
@@ -155,13 +152,6 @@ void HREncoder::_event(XtcData::Xtc& xtc,
                    const void* bufEnd,
                    std::vector< XtcData::Array<uint8_t> >& subframes)
 {
-    std::cout << "HREncoder::_event" << std::endl;
-    std::cout << "Num subframes: " << subframes.size() << std::endl; // 4
-    std::cout << "Num elems sf[0]: " << subframes[0].num_elem() << std::endl;
-    std::cout << "Num elems sf[1]: " << subframes[1].num_elem() << std::endl;
-    std::cout << "Num elems sf[2]: " << subframes[2].num_elem() << std::endl;
-    std::cout << "Num elems sf[3]: " << subframes[3].num_elem() << std::endl;
-
     Enc::Streams::createData(xtc, bufEnd, m_namesLookup, m_evtNamesRaw, m_evtNamesFex, &subframes[2]);
 }
 } // Drp
