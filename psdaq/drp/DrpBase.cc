@@ -392,15 +392,7 @@ const Pds::TimingHeader* PgpReader::handle(Detector* det, unsigned current)
 
             if ((evtCntDiff < 0) || (evtCntDiff > 100)) {
                 logging::critical("PGPReader: Aborting on crazy jump in event counter: %d\n", evtCntDiff);
-                //abort();
-                // Remove everything else in this block
-                logging::critical("PGPReader: Commented out the abort()! Remember to uncomment for production!");
-                handleBrokenEvent(*event);
-                freeDma(event);
-                logging::critical("Sleeping...");
-                sleep(15);
-                return nullptr;
-                // End remove
+                abort();
             }
 
             if (m_lastComplete == evtCounter) {}  // something else is going on
