@@ -314,7 +314,7 @@ int translateJson2XtcNames(Document* d, Xtc* xtc, const void* bufEnd, NamesLooku
         return -1;
     }
     if (!d->HasMember(":types:")) {
-        printf("Document is missing mandatory :types: field!")
+      printf("Document is missing mandatory :types: field!");
     }
     const Value& a = (*d)["alg:RO"];
     const Value& v = a["version:RO"];
