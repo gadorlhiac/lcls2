@@ -69,7 +69,7 @@ def hrencoder_init(arg,dev='/dev/datadev_0',lanemask=1,xpmpv=None,timebase="186M
     myargs = {
         'dev': dev,
         'lane': lane,
-        # 'dataVcEn': False,                       # Whether to open data path in devGui
+        #'dataVcEn': False,                       # Whether to open data path in devGui
         'defaultFile': "/cds/home/d/dorlhiac/Repos/high-rate-encoder-dev/software/config/",#"config/defaults.yml",   # Config file for defaults
         'standAloneMode': False,                    # False = use fiber timing, True = local timing
         'pollEn': False,                           # Enable automatic register polling (True by default)
@@ -81,12 +81,12 @@ def hrencoder_init(arg,dev='/dev/datadev_0',lanemask=1,xpmpv=None,timebase="186M
     # in older versions we didn't have to use the "with" statement
     # but now the register accesses don't seem to work without it -cpo
     hr_enc = high_rate_encoder_dev.Root(**myargs)
-
+    #hr_enc = None
     # Get ClinkDevRoot.start() and stop() called
     weakref.finalize(hr_enc, hr_enc.stop)
     hr_enc.start()
 
-    #cycle_timing_link(hr_enc)
+    ##cycle_timing_link(hr_enc)
     hr_enc.App.TimingRx.ConfigLclsTimingV2()
     time.sleep(0.1)
 
@@ -112,7 +112,7 @@ def hrencoder_connect(hr_enc):
     hr_enc.StopRun()
 
     d = {}
-    d['paddr'] = rxId
+    d['paddr'] = rxId # 0xffb56804 for teststand testing
 
     return d
 
@@ -191,9 +191,7 @@ def hrencoder_config(hr_enc,connect_str,cfgtype,detname,detsegm,grp):
 
     group = grp
 
-    #cfg = get_config(connect_str,cfgtype,detname,detsegm)
     cfg = {}
-    #cfg['expert']={}
     cfg[':types:'] = {
         'alg:RO': {
             'alg:RO' : 'CHARSTR',
@@ -216,9 +214,6 @@ def hrencoder_config(hr_enc,connect_str,cfgtype,detname,detsegm,grp):
         'doc:RO': 'Test',
         'version:RO': [1, 0, 0],
     }
-    #cfg['alg:RO'] = {}
-
-    ocfg = cfg
 
     if hr_enc.Core.Pgp4AxiL.RxStatus.RemRxLinkReady.get() != 1:
         raise ValueError("PGP Link Down")
@@ -231,37 +226,21 @@ def hrencoder_config(hr_enc,connect_str,cfgtype,detname,detsegm,grp):
     # This may not be the same as XpmPauseThresh for the cameralink
     # Range for this value is [0, 31] so the code as written wouldn't work
     if hasattr(trig_event_buf, "PauseThreshold"):
-        trig_event_buf.PauseThreshold.set(16)#0xff)
+        trig_event_buf.PauseThreshold.set(8) # Need to set to 8
 
     hr_enc.App.EventBuilder.Blowoff.set(True)
-    # drain any data in the event pipeline
-    #applicationLane.EventBuilder.Blowoff.set(True)
-    #getattr(getattr(cl,clinkFeb).ClinkTop,clinkCh).Blowoff.set(True)
-
-    #  set bool parameters
-    #cfg['expert']['ClinkFeb']['TrigCtrl']['EnableTrig'] = True
-    #cfg['expert']['ClinkFeb']['TrigCtrl']['InvCC'] = False
-    #cfg['expert']['ClinkFeb']['ClinkTop']['ClinkCh']['DataEn'] = True
-
     #user_to_expert(hr_enc,cfg,full=True)
 
-    #config_expert(hr_enc,cfg['expert'])
-    #trig_event_buf.TriggerDelay.set(42)
-    #trig_event_buf.PauseThreshold.set(16)
     trig_event_buf.Partition.set(0x0)
     #trig_event_buf.PauseToTrig.set(0x0)
     #trig_event_buf.NotPauseToTrig.set(0xfff)
 
-    #hr_enc.App.TimingRx.XpmMiniWrapper.XpmMini.HwEnable.set(False)
     hr_enc.App.EventBuilder.Blowoff.set(False)
 
-    # Enable all channels in BatcherEvent Builder
-    hr_enc.App.EventBuilder.Bypass.set(0x0)
+    # Bypass BEB 3 (full timing stream) - not needed for encoder
+    # and has minimal (no) buffer.
+    hr_enc.App.EventBuilder.Bypass.set(0x4)
     hr_enc.App.EventBuilder.Timeout.set(0x0)
-    #getattr(getattr(cl,clinkFeb).ClinkTop,clinkCh).Blowoff.set(False)
-    #applicationLane.EventBuilder.Blowoff.set(False)
-    # enable all channels in the rogue BatcherEventBuilder
-    #applicationLane.EventBuilder.Bypass.set(0x0)
 
 
     #  Capture the firmware version to persist in the xtc
@@ -271,21 +250,12 @@ def hrencoder_config(hr_enc,connect_str,cfgtype,detname,detsegm,grp):
 
     hr_enc.StartRun()
 
-    # must be done after StartRun because that routine sets MasterEnable
-    # to True for all lanes. That causes 100% deadtime from unused lanes.
-    # Seems there is only one
     trig_event_buf.enable.set(True)
     trig_event_buf.MasterEnable.set(True)
-    #for i in range(4):
-    #    hr_enc.App.TimingRx.TriggerEventManager.TriggerEventBuffer[i].MasterEnable.set(i==lane)
 
-    ocfg = cfg
-    print(cfg)
+    #hr_enc.__exit__(None, None, None)
+    #del hr_enc
     return json.dumps(cfg)
-
-    #ncfg = cfg.copy()
-    #del ncfg['expert']['ClinkFeb']
-    #return json.dumps(ncfg)
 
 def hrencoder_scan_keys(update):
     global ocfg
