@@ -22,7 +22,6 @@ cl = None
 pv = None
 xpmpv_global = None
 barrier_global = Barrier()
-connect_info_global = {}
 lm = 1
 
 #FEB parameters
@@ -140,6 +139,39 @@ def piranha4_init(arg,dev='/dev/datadev_0',lanemask=1,xpmpv=None,timebase="186M"
     weakref.finalize(cl, cl.stop)
     cl.start()
 
+    # TODO: To be removed, now commented out xpm glitch workaround
+    ## Open a new thread here
+    #if xpmpv is not None:
+    #    cl.ClinkPcie.Hsio.TimingRx.ConfigureXpmMini()
+    #    pv = PVCtrls(xpmpv,cl.ClinkPcie.Hsio.TimingRx.XpmMiniWrapper)
+    #    pv.start()
+    #else:
+    #    #  Empirically found that we need to cycle to LCLS1 timing
+    #    #  to get the timing feedback link to lock
+    #    #  cpo: switch this to XpmMini which recovers from more issues?
+    #    # check to see if timing is stuck
+    #    nbad = 0
+    #    while 1:
+    #        # check to see if timing is stuck
+    #        sof1 = cl.ClinkPcie.Hsio.TimingRx.TimingFrameRx.sofCount.get()
+    #        time.sleep(0.1)
+    #        sof2 = cl.ClinkPcie.Hsio.TimingRx.TimingFrameRx.sofCount.get()
+    #        if sof1!=sof2: break
+    #        nbad+=1
+    #        print('*** Timing link stuck:',sof1,sof2,'resetting. Iteration:', nbad)
+    #        #  Empirically found that we need to cycle to LCLS1 timing
+    #        #  to get the timing feedback link to lock
+    #        #  cpo: switch this to XpmMini which recovers from more issues?
+    #        cl.ClinkPcie.Hsio.TimingRx.ConfigureXpmMini()
+    #        time.sleep(3.5)
+    #        cl.ClinkPcie.Hsio.TimingRx.ConfigLclsTimingV2()
+    #        time.sleep(3.5)
+
+    # camlink timing seems to intermittently lose lock back to the XPM
+    # and empirically this fixes it.  not sure if we need the sleep - cpo
+    cl.ClinkPcie.Hsio.TimingRx.TimingPhyMonitor.TxPhyReset()
+    time.sleep(0.1)
+
     return cl
 
 def piranha4_init_feb(slane=None,schan=None):
@@ -149,7 +181,12 @@ def piranha4_init_feb(slane=None,schan=None):
         chan = int(schan)
 
 # called on alloc
-def connectionInfo(cl, alloc_json_str):
+def piranha4_connectionInfo(cl, alloc_json_str):
+    global lane
+    global chan
+
+    print('piranha4_connectionInfo')
+
     alloc_json = json.loads(alloc_json_str)
     supervisor,nworker = supervisor_info(alloc_json)
     print('camlink supervisor:',supervisor,'nworkers:',nworker)
@@ -194,15 +231,10 @@ def connectionInfo(cl, alloc_json_str):
     if barrier_global.supervisor:
         cl.StopRun()
     barrier_global.wait()
-    connect_info_global['paddr'] = rxId
+    connect_info = {}
+    connect_info['paddr'] = rxId
 
-    return connect_info_global
-
-def piranha4_connect(cl, connect_json_str):
-    global lane
-    global chan
-
-    print('piranha4_connect')
+    # Was piranha4_connect(cl, connect_json_str):
 
     ## initialize the serial link
     #uart = getattr(getattr(cl,'ClinkFeb[%d]'%lane).ClinkTop,'Ch[%d]'%chan)
@@ -245,14 +277,14 @@ def piranha4_connect(cl, connect_json_str):
         print('Piranha BiST error: Check User\'s manual for meaning')
 
     try:
-        connect_info_global['model'] = model if model == '' else (model.split('_')[2].split('K')[0])
-        connect_info_global['serno'] = serno
-        connect_info_global['bist']  = bist
+        connect_info['model'] = model if model == '' else (model.split('_')[2].split('K')[0])
+        connect_info['serno'] = serno
+        connect_info['bist']  = bist
     except:
         logging.warning('No piranha model/serialnum available on camlink serial port. Configure camera with rogue.')
-        connect_info_global['model'] = 'none'
-        connect_info_global['serno'] = 'P4_CM_02K10D_00_R' # not ideal: default to P4_CM_02K10D_00_R
-        connect_info_global['bist']  = 'Bad'
+        connect_info['model'] = 'none'
+        connect_info['serno'] = 'P4_CM_02K10D_00_R' # not ideal: default to P4_CM_02K10D_00_R
+        connect_info['bist']  = 'Bad'
 
     uart._rx._clear()
     uart.VT()
@@ -264,7 +296,7 @@ def piranha4_connect(cl, connect_json_str):
     uart._rx._await()
     print('Voltage: ', uart._rx._resp[-1])
 
-    return connect_info_global
+    return connect_info
 
 def user_to_expert(cl, cfg, full=False):
     global group
