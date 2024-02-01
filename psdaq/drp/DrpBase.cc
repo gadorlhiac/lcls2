@@ -396,13 +396,13 @@ const Pds::TimingHeader* PgpReader::handle(Detector* det, unsigned current)
             }
 
             if (m_lastComplete == evtCounter) {}  // something else is going on
-            else {/*
+            else {
                 for (unsigned e=m_lastComplete+1; e!=evtCounter; e++) {
                     PGPEvent* brokenEvent = &m_pool.pgpEvents[e & (m_pool.nDmaBuffers() - 1)];
                     logging::error("broken event:  %08x", brokenEvent->mask);
                     handleBrokenEvent(*brokenEvent);
                     freeDma(brokenEvent);   // Leaves event mask = 0
-                }*/
+                }
             }
         }
         m_lastComplete = evtCounter;
