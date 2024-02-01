@@ -13,7 +13,6 @@ class HREncoder : public BEBDetector
 public:
     HREncoder(Parameters* para, MemPool* pool);
     void connect(const nlohmann::json&, const std::string& collectionId) override;
-    nlohmann::json connectionInfo() override;
 
 private:
     unsigned _configure(XtcData::Xtc&, const void* bufEnd, XtcData::ConfigIter&) override;

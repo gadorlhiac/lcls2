@@ -98,7 +98,8 @@ def hrencoder_init_feb(slane=None,schan=None):
     if schan is not None:
         chan = int(schan)
 
-def hrencoder_connect(hr_enc):
+#def hrencoder_connect(hr_enc):
+def hrencoder_connectionInfo(hr_enc, alloc_json_str):
     global lane
     global chan
 

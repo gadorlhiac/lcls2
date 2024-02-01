@@ -120,7 +120,7 @@ namespace Drp {
             //CreateData fex(xtc, bufEnd, lookup, fexId);
 
        }
-    };
+    }; 
 
   } // Enc
 
@@ -134,15 +134,6 @@ HREncoder::HREncoder(Parameters* para, MemPool* pool) :
     if (para->kwargs.find("timebase")!=para->kwargs.end() &&
         para->kwargs["timebase"]==std::string("119M"))
         m_debatch = true;
-}
-
-json HREncoder::connectionInfo()
-{
-    return BEBDetector::connectionInfo();
-
-    // Exclude connection info until cameralink-gateway timingTxLink is fixed
-    logging::error("Returning NO XPM link; implementation incomplete");
-    return json({});
 }
 
 unsigned HREncoder::_configure(Xtc& xtc, const void* bufEnd, ConfigIter&)
