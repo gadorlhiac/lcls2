@@ -199,11 +199,16 @@ def user_to_expert(prefix, cfg, full=False):
             else:
                 #  LCLS2 timing.  Let controls set the delay value.
                 print('ctrlDelay {:}  partitionDelay {:}  delta_ns {:}'.format(ctrlDelay,partitionDelay,delta))
-                triggerDelay   = int(ctrlDelay + delta*1300/7000 - partitionDelay*200)
+                # since controls now also runs off the LCLS2 timing fiber there
+                # is not reason to have a "delta".  This was put in place to
+                # compensate for different lcls1/lcls2 timing fiber lengths
+                # when controls used the lcls1 timing fiber = cpo 02/01/24
+                #triggerDelay   = int(ctrlDelay + delta*1300/7000 - partitionDelay*200)
+                triggerDelay   = int(ctrlDelay - partitionDelay*200)
 
             print('triggerDelay {:}'.format(triggerDelay))
             if triggerDelay < 0:
-                print('Raise delta_ns >= {:}'.format(-triggerDelay*7000/1300.))
+                print('Raise controls trigger delay >= {:} nanoseconds ({:} 185MHz clock ticks)'.format(-triggerDelay*7000/1300.,-triggerDelay))
                 raise ValueError('triggerDelay computes to < 0')
 
             ctxt_put(prefix+'TriggerEventManager:TriggerEventBuffer[0]:TriggerDelay', triggerDelay)
