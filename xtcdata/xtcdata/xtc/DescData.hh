@@ -39,7 +39,7 @@ public:
         _offset[0]=0;
         _numentries = names.num();
         unsigned shapeIndex = 0;
-        for (unsigned i=0; i<_numentries-1; i++) {
+        for (unsigned i=0; _numentries && i<_numentries-1; i++) {
             Name& name = names.get(i);
             if (name.rank()==0) _offset[i+1]=_offset[i]+Name::get_element_size(name.type());
             else {
